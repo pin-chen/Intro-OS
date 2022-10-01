@@ -5,64 +5,37 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-void forkerror(){
-	printf("Fork Error!!!");
-}
-
 void output(int num){
-	pid_t my_pid = getpid();
-	pid_t parent_pid = getppid();
-	printf("Fork %u. I'm the chilid %jd, my parent is %jd.\n", num, my_pid, parent_pid);
+	printf("Fork %d. I'm the chilid %jd, my parent is %jd.\n", num, (intmax_t) getpid(), (intmax_t) getppid());
 }
 
 int main(){
-	pid_t pid;
-	pid = getpid();
-	printf("Main Process ID : %jd\n", (intmax_t) pid);
-	pid = fork(); //fork1
-	if(pid < 0){
-		forkerror();	
-	}else if(pid == 0){
+	printf("Main Process ID : %jd\n", (intmax_t) getpid());
+	if(!fork()){ //fork1
 		output(1);
-		pid = fork(); //fork2
-		if(pid < 0){
-                	forkerror();
-        	}else if(pid == 0){
+		if(!fork()){ //fork2
 			output(2);
-			pid = fork(); //fork3
-			if(pid < 0){
-                		forkerror();
-       			}else if(pid == 0){
+			if(!fork()){ //fork3
 				output(3);
-        		}
+			}else{
+				wait(NULL);
+       			}
+		}else{
 			wait(NULL);
-       		}
-		wait(NULL);
+		}
 	}else{
 		wait(NULL);
-                pid = fork(); //fork4
-                if(pid < 0){
-                        forkerror();
-                }else if(pid == 0){
+                if(!fork()){ //fork4
 			output(4);
-                        //link5
-                }else{
+		}else{
 			wait(NULL);
-                	pid = fork(); //fork6
-                	if(pid < 0){
-                        	forkerror();
-                	}else if(pid == 0){
+               		if(!fork()){ //fork6
 				output(6);
-                        	//linkl5
-        	        }else{
-				wait(NULL); 
-				//link5
-                	}
+			}else{
+				wait(NULL);
+			}
 		}
-		pid = fork(); //fork5
-		if(pid < 0){
-			forkerror();
-		}else if(pid == 0){
+		if(!fork()){ //fork5
 			output(5);
 		}else{
 			wait(NULL);
