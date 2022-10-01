@@ -5,11 +5,8 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-static int count_fork = 0;
-
 void forkerror(){
-	perror("Fork Error!!!");
-	exit(1);
+	printf("Fork Error!!!");
 }
 
 void output(int num){
@@ -22,80 +19,54 @@ int main(){
 	pid_t pid;
 	pid = getpid();
 	printf("Main Process ID : %jd\n", (intmax_t) pid);
-	count_fork++;
 	pid = fork(); //fork1
 	if(pid < 0){
 		forkerror();	
 	}else if(pid == 0){
 		output(1);
-		count_fork++;
 		pid = fork(); //fork2
 		if(pid < 0){
                 	forkerror();
         	}else if(pid == 0){
 			output(2);
-			count_fork++;
 			pid = fork(); //fork3
 			if(pid < 0){
                 		forkerror();
        			}else if(pid == 0){
 				output(3);
-				exit(0);
         		}
 			wait(NULL);
-			exit(0);
        		}
 		wait(NULL);
-		exit(0);
 	}else{
 		wait(NULL);
-		count_fork++;
                 pid = fork(); //fork4
                 if(pid < 0){
                         forkerror();
                 }else if(pid == 0){
 			output(4);
-			count_fork++;
-                        pid = fork(); //fork5
-                        if(pid < 0){
-                                forkerror();
-                        }else if(pid == 0){
-				output(5);
-                                exit(0);
-                        }
-                        wait(NULL);
-                        exit(0);
+                        //link5
                 }else{
 			wait(NULL);
-			count_fork++;
                 	pid = fork(); //fork6
                 	if(pid < 0){
                         	forkerror();
                 	}else if(pid == 0){
 				output(6);
-				count_fork++;
-                        	pid = fork(); //fork5
-                        	if(pid < 0){
-                                	forkerror();
-                        	}else if(pid == 0){
-					output(5);
-                                	exit(0);
-                       		}
-                        	wait(NULL);
-                	        exit(0);
+                        	//linkl5
         	        }else{
-				wait(NULL);
-				count_fork++; 
-				pid = fork(); //fork5
-				if(pid < 0){
-					forkerror();
-				}else if(pid == 0){	
-					output(5);
-					exit(0);
-				}
+				wait(NULL); 
+				//link5
                 	}
+		}
+		pid = fork(); //fork5
+		if(pid < 0){
+			forkerror();
+		}else if(pid == 0){
+			output(5);
+		}else{
+			wait(NULL);
 		}
 	}
 	return 0;
-
 }
