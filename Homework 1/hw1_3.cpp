@@ -42,13 +42,37 @@ int main(void)
 		}
 		argv[argc] = new char;
 		argv[argc] = NULL;
-        /**
+	        /**
 		* your code!
 		* After reading user input, the step are:
 		* (1) fork a child process using fork()
 		* (2) the child process will invoke execvp()
 		* (3) if command included &, parent will not invoke wait()
 		*/
+		if(argc == 0){
+			continue;
+		}
+		const char* Exit = "exit";
+		if(strcmp(argv[0], Exit) == 0){
+			exit(0);
+		}
+		const char* And = "&";
+		bool backend = false;
+		if(strcmp(argv[argc - 1], And) == 0){
+			backend = true;
+			argv[argc - 1] = NULL;
+		}
+		pid = fork();
+		if(pid < 0){
+			printf("Fork Error\n");
+		}else if(pid == 0){
+			execvp(argv[0], &argv[0]);
+		}else{
+                	if(backend == false){
+                        	wait(NULL);
+                	}
+		}
+		//
 		arg.clear();
 		argv_t.clear();
 		for(int i=0;i<argc;i++){
