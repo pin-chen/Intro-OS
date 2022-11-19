@@ -25,7 +25,7 @@ int main(){
 		}
 	}else{
 		wait(NULL);
-                if(!fork()){ //fork4
+		if(!fork()){ //fork4
 			output(4);
 		}else{
 			wait(NULL);

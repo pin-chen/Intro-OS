@@ -12,7 +12,6 @@ int main(void)
 	int should_run = 1; 
 	vector<string> arg;
 	string tmp;
-	vector<char*> argv_t;
 	char **argv;
 	char buf[80];
 	int n;
@@ -42,7 +41,7 @@ int main(void)
 		}
 		argv[argc] = new char;
 		argv[argc] = NULL;
-	        /**
+	    /**
 		* your code!
 		* After reading user input, the step are:
 		* (1) fork a child process using fork()
@@ -64,13 +63,15 @@ int main(void)
 		}
 		pid = fork();
 		if(pid < 0){
-			printf("Fork Error\n");
+			printf("Fork Error");
 		}else if(pid == 0){
 			execvp(argv[0], &argv[0]);
+			perror("Exec Error");
+			exit(1);
 		}else{
-                	if(backend == false){
-                        	wait(NULL);
-                	}
+			if(backend == false){
+				wait(NULL);
+			}
 		}
 		//
 		arg.clear();
