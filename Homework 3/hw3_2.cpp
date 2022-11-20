@@ -46,12 +46,13 @@ int main(){
 			if(excute.leftTime == 0){
 				excute.finishTime = t;
 				finishState.push_back(excute);
-				waitQuantum = 0;
+				waitQuantum = -1;
 			}else if(waitQuantum == 0){
 				readyQueue.push(excute);
+				waitQuantum = -1;
 			}
 		}
-		if(waitQuantum <= 0 && readyQueue.size() != 0){
+		if(waitQuantum < 0 && readyQueue.size() != 0){
 			excute = readyQueue.front();
 			readyQueue.pop();
 			waitQuantum = timeQuantum;
