@@ -2,9 +2,7 @@
 #include <vector>
 #include <queue>
 #include <algorithm>
-#define FINISH 0
-#define TIMEUP 1
-#define NOTYET 2
+
 using namespace std;
 
 struct process{
@@ -15,34 +13,34 @@ struct process{
 	int leftTime;
 };
 
-bool cmp1(const struct process &x, const struct process &y){
+bool compareWithArrivalTime(const struct process &x, const struct process &y){
 	return x.arrivalTime < y.arrivalTime;
 }
 
-bool cmp2(const struct process &x, const struct process &y){
+bool compareWithID(const struct process &x, const struct process &y){
 	return x.id < y.id;
 }
 
 class RR{
 	private:
 		queue<process> readyQueue;
-		process excute;
-		bool isExcute;
+		process execute;
+		bool isExecute;
 		int timeQuantum;
 		int stopTime;
 		void setStopTime(const int time);
 	public:
 		RR(int timeQuantum);
 		int checkWatingQueue(const int time, queue<process> &waitingQueue);
-		int pushReadyProcess(process &readyProcess);
-		int setExcuteProcess(const int time);
+		void pushReadyProcess(process &readyProcess);
+		int setExecuteProcess(const int time);
 		bool isInterrupt(const int time);
 		process getPauseProcess();
 };
 
 RR::RR(int timeQuantum){
 	this->timeQuantum = timeQuantum;
-	this->isExcute = false;
+	this->isExecute = false;
 }
 
 void RR::setStopTime(const int time){
@@ -64,37 +62,36 @@ int RR::checkWatingQueue(const int time, queue<process> &waitingQueue){
 	return 0;
 }
 
-int RR::pushReadyProcess(process &readyProcess){
+void RR::pushReadyProcess(process &readyProcess){
 	this->readyQueue.push(readyProcess);
-	return 0;
 }
 
-int RR::setExcuteProcess(const int time){
-	if(isExcute) return -1;
+int RR::setExecuteProcess(const int time){
+	if(isExecute) return -1;
 	if(readyQueue.size() == 0) return -1;
-	this->excute = this->readyQueue.front();
+	this->execute = this->readyQueue.front();
 	this->readyQueue.pop();
 	this->setStopTime(time);
-	this->isExcute = true;
+	this->isExecute = true;
 	return 0;
 }
 
 bool RR::isInterrupt(const int time){
-	if(!this->isExcute) return false;
-	this->excute.leftTime--;
-	if(this->excute.leftTime == 0){
-		this->excute.finishTime = time;
-		this->isExcute = false;
+	if(!this->isExecute) return false;
+	this->execute.leftTime--;
+	if(this->execute.leftTime == 0){
+		this->execute.finishTime = time;
+		this->isExecute = false;
 		return true;
-	}else if(this->stopTime >= time){
-		this->isExcute = false;
+	}else if(this->stopTime == time){
+		this->isExecute = false;
 		return true;
 	}
 	return false;
 }
 
 process RR::getPauseProcess(){
-	return excute;
+	return this->execute;
 }
 
 void input(queue<process> &waitingQueue){
@@ -105,12 +102,12 @@ void input(queue<process> &waitingQueue){
 	for(int i = 0; i < n; i++) cin >> p[i].arrivalTime;
 	for(int i = 0; i < n; i++) cin >> p[i].burstTime;
 	for(int i = 0; i < n; i++) p[i].leftTime = p[i].burstTime;
-	sort(p.begin(), p.end(), cmp1);
+	sort(p.begin(), p.end(), compareWithArrivalTime);
 	for(int i = 0; i < n; i++) waitingQueue.push(p[i]);
 }
 
 void output(vector<process> &p){
-	sort(p.begin(), p.end(), cmp2);
+	sort(p.begin(), p.end(), compareWithID);
 	int waitingTime, turnaroundTime, totalWaitingTime = 0, totalTurnaroundTime = 0;
 	for(int i = 0; i < p.size(); i++){
 		turnaroundTime = p[i].finishTime - p[i].arrivalTime;
@@ -134,7 +131,7 @@ void simulate(RR &processSchedule, queue<process> &waitingQueue, vector<process>
 				processSchedule.pushReadyProcess(pauseProcess);
 			}
 		}
-		processSchedule.setExcuteProcess(t);
+		processSchedule.setExecuteProcess(t);
 	}
 }
 
