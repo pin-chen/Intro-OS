@@ -180,7 +180,7 @@ void output(vector<process> &p){
 		cout << waitingTime << " " << turnaroundTime << '\n';
 	}
 	cout << totalWaitingTime << '\n' << totalTurnaroundTime << '\n';
-};
+}
 
 void simulate(RR &processSchedule1, FCFS &processSchedule2, queue<process> &waitingQueue, vector<process> &finishState){
 	int n = waitingQueue.size();
