@@ -35,37 +35,22 @@ class SRTF{
 		bool isExecute;
 	public:
 		SRTF();
-		int checkWatingQueue(const int time, queue<process> &waitingQueue);
 		void pushReadyProcess(process &readyProcess);
-		int setExecuteProcess(const int time);
-		bool isInterrupt(const int time);
+		int setExecuteProcess();
+		bool isInterrupt();
 		process getPauseProcess();
+		int through1s();
 };
 
 SRTF::SRTF(){
 	this->isExecute = false;
 }
 
-int SRTF::checkWatingQueue(const int time, queue<process> &waitingQueue){
-	for(;;){
-		process p = waitingQueue.front();
-		if(p.arrivalTime < time){
-			return -1;
-		}else if(p.arrivalTime == time){
-			this->pushReadyProcess(p);
-			waitingQueue.pop();
-		}else{
-			break;
-		}
-	}
-	return 0;
-}
-
 void SRTF::pushReadyProcess(process &readyProcess){
 	this->readyQueue.push(readyProcess);
 }
 
-int SRTF::setExecuteProcess(const int time){
+int SRTF::setExecuteProcess(){
 	if(isExecute) return -1;
 	if(readyQueue.size() == 0) return -1;
 	this->execute = this->readyQueue.top();
@@ -74,14 +59,15 @@ int SRTF::setExecuteProcess(const int time){
 	return 0;
 }
 
-bool SRTF::isInterrupt(const int time){
-	if(!this->isExecute) return false;
+int SRTF::through1s(){
+	if(!this->isExecute) return -1;
 	this->execute.leftTime--;
-	if(this->execute.leftTime == 0){
-		this->execute.finishTime = time;
-		this->isExecute = false;
-		return true;
-	}else if(this->execute.leftTime > this->readyQueue.top().leftTime){
+	return 0;
+}
+
+bool SRTF::isInterrupt(){
+	if(!this->isExecute) return false;
+	if(this->execute.leftTime == 0 || this->execute.leftTime > this->readyQueue.top().leftTime){
 		this->isExecute = false;
 		return true;
 	}
@@ -90,6 +76,21 @@ bool SRTF::isInterrupt(const int time){
 
 process SRTF::getPauseProcess(){
 	return this->execute;
+}
+
+int checkWaitingQueue(const int time, queue<process> &waitingQueue, SRTF &processSchedule){
+	for(; waitingQueue.size() > 0;){
+		process p = waitingQueue.front();
+		if(p.arrivalTime < time){
+			return -1;
+		}else if(p.arrivalTime == time){
+			processSchedule.pushReadyProcess(waitingQueue.front());
+			waitingQueue.pop();
+		}else{
+			break;
+		}
+	}
+	return 0;
 }
 
 void input(queue<process> &waitingQueue){
@@ -119,17 +120,18 @@ void output(vector<process> &p){
 
 void simulate(SRTF &processSchedule, queue<process> &waitingQueue, vector<process> &finishState){
 	int n = waitingQueue.size();
-	for(int t = 0; finishState.size() < n; t++){
-		processSchedule.checkWatingQueue(t, waitingQueue);
-		if( processSchedule.isInterrupt(t) ){
+	for(int t = 0; finishState.size() < n; t++, processSchedule.through1s()){
+		checkWaitingQueue(t, waitingQueue, processSchedule);
+		if( processSchedule.isInterrupt() ){
 			process pauseProcess = processSchedule.getPauseProcess();
 			if(pauseProcess.leftTime == 0){
+				pauseProcess.finishTime = t;
 				finishState.push_back(pauseProcess);
 			}else{
 				processSchedule.pushReadyProcess(pauseProcess);
 			}
 		}
-		processSchedule.setExecuteProcess(t);
+		processSchedule.setExecuteProcess();
 	}
 }
 

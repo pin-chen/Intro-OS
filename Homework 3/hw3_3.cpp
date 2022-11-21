@@ -27,17 +27,17 @@ class RR{
 		process execute;
 		bool isExecute;
 		int timeQuantum;
-		int stopTime;
-		void setStopTime(const int time);
+		int leftQuantum;
+		void setLeftQuantum();
 	public:
 		RR(int timeQuantum);
-		int checkWatingQueue(const int time, queue<process> &waitingQueue);
 		int pushReadyProcess(process &readyProcess);
-		int setExecuteProcess(const int time);
-		bool isInterrupt(const int time);
+		bool setExecuteProcess();
+		bool isInterrupt();
 		process getPauseProcess();
 		bool isExecuting();
 		bool preempt();
+		int through1s();
 };
 
 RR::RR(int timeQuantum){
@@ -45,23 +45,8 @@ RR::RR(int timeQuantum){
 	this->isExecute = false;
 }
 
-void RR::setStopTime(const int time){
-	this->stopTime = time + this->timeQuantum;
-}
-
-int RR::checkWatingQueue(const int time, queue<process> &waitingQueue){
-	for(;;){
-		process p = waitingQueue.front();
-		if(p.arrivalTime < time){
-			return -1;
-		}else if(p.arrivalTime == time){
-			this->pushReadyProcess(p);
-			waitingQueue.pop();
-		}else{
-			break;
-		}
-	}
-	return 0;
+void RR::setLeftQuantum(){
+	this->leftQuantum = this->timeQuantum;
 }
 
 int RR::pushReadyProcess(process &readyProcess){
@@ -69,24 +54,19 @@ int RR::pushReadyProcess(process &readyProcess){
 	return 0;
 }
 
-int RR::setExecuteProcess(const int time){
-	if(this->isExecute) return -1;
-	if(this->readyQueue.size() == 0) return -1;
+bool RR::setExecuteProcess(){
+	if(this->isExecute) return 1;
+	if(this->readyQueue.size() == 0) return 0;
 	this->execute = this->readyQueue.front();
 	this->readyQueue.pop();
-	this->setStopTime(time);
+	this->setLeftQuantum();
 	this->isExecute = true;
-	return 0;
+	return 1;
 }
 
-bool RR::isInterrupt(const int time){
+bool RR::isInterrupt(){
 	if(!this->isExecute) return false;
-	this->execute.leftTime--;
-	if(this->execute.leftTime == 0){
-		this->execute.finishTime = time;
-		this->isExecute = false;
-		return true;
-	}else if(this->stopTime == time){
+	if(this->execute.leftTime == 0 || this->leftQuantum == 0){
 		this->isExecute = false;
 		return true;
 	}
@@ -105,6 +85,13 @@ bool RR::preempt(){
 	return this->readyQueue.size() != 0 && !this->isExecute;
 }
 
+int RR::through1s(){
+	if(!this->isExecute) return -1;
+	this->execute.leftTime--;
+	this->leftQuantum--;
+	return 0;
+}
+
 class FCFS{
 	private:
 		queue<process> readyQueue;
@@ -113,10 +100,11 @@ class FCFS{
 	public:
 		FCFS();
 		void pushReadyProcess(process &readyProcess);
-		int setExecuteProcess();
-		bool isInterrupt(const int time);
+		bool setExecuteProcess();
+		bool isInterrupt();
 		process getPauseProcess();
 		void bePreempted();
+		int through1s();
 };
 
 FCFS::FCFS(){
@@ -127,20 +115,18 @@ void FCFS::pushReadyProcess(process &readyProcess){
 	this->readyQueue.push(readyProcess);
 }
 
-int FCFS::setExecuteProcess(){
-	if(this->isExecute) return -1;
-	if(this->readyQueue.size() == 0) return -1;
+bool FCFS::setExecuteProcess(){
+	if(this->isExecute) return 1;
+	if(this->readyQueue.size() == 0) return 0;
 	this->execute = this->readyQueue.front();
 	this->readyQueue.pop();
 	this->isExecute = true;
-	return 0;
+	return 1;
 }
 
-bool FCFS::isInterrupt(const int time){
+bool FCFS::isInterrupt(){
 	if(!this->isExecute) return false;
-	this->execute.leftTime--;
 	if(this->execute.leftTime == 0){
-		this->execute.finishTime = time;
 		this->isExecute = false;
 		return true;
 	}
@@ -155,6 +141,27 @@ void FCFS::bePreempted(){
 	if(!this->isExecute) return;
 	this->isExecute = false;
 	this->readyQueue.push(execute);
+}
+
+int FCFS::through1s(){
+	if(!this->isExecute) return -1;
+	this->execute.leftTime--;
+	return 0;
+}
+
+int checkWatingQueue(const int time, queue<process> &waitingQueue, RR &processSchedule1){
+	for(; waitingQueue.size() > 0;){
+		process p = waitingQueue.front();
+		if(p.arrivalTime < time){
+			return -1;
+		}else if(p.arrivalTime == time){
+			processSchedule1.pushReadyProcess(p);
+			waitingQueue.pop();
+		}else{
+			break;
+		}
+	}
+	return 0;
 }
 
 void input(queue<process> &waitingQueue){
@@ -184,25 +191,24 @@ void output(vector<process> &p){
 
 void simulate(RR &processSchedule1, FCFS &processSchedule2, queue<process> &waitingQueue, vector<process> &finishState){
 	int n = waitingQueue.size();
-	for(int t = 0; finishState.size() < n; t++){
-		processSchedule1.checkWatingQueue(t, waitingQueue);
-		if( processSchedule1.isInterrupt(t) ){
+	for(int t = 0; finishState.size() < n; t++, processSchedule1.through1s(), processSchedule2.through1s()){
+		checkWatingQueue(t, waitingQueue, processSchedule1);
+		if( processSchedule1.isInterrupt() ){
 			process pauseProcess = processSchedule1.getPauseProcess();
 			if(pauseProcess.leftTime == 0){
+				pauseProcess.finishTime = t;
 				finishState.push_back(pauseProcess);
 			}else{
 				processSchedule2.pushReadyProcess(pauseProcess);
 			}
-		}else if( processSchedule2.isInterrupt(t) ){
+		}else if( processSchedule2.isInterrupt() ){
 			process pauseProcess = processSchedule2.getPauseProcess();
+			pauseProcess.finishTime = t;
 			finishState.push_back(pauseProcess);
 		}else if( processSchedule1.preempt() ){
 			processSchedule2.bePreempted();
 		}
-		processSchedule1.setExecuteProcess(t);
-		if( !processSchedule1.isExecuting() ){
-			processSchedule2.setExecuteProcess();
-		}
+		processSchedule1.setExecuteProcess() || processSchedule2.setExecuteProcess();
 	}
 }
 

@@ -31,11 +31,11 @@ class RR{
 		void setStopTime(const int time);
 	public:
 		RR(int timeQuantum);
-		int checkWatingQueue(const int time, queue<process> &waitingQueue);
 		void pushReadyProcess(process &readyProcess);
 		int setExecuteProcess(const int time);
 		bool isInterrupt(const int time);
 		process getPauseProcess();
+		int through1s();
 };
 
 RR::RR(int timeQuantum){
@@ -45,21 +45,6 @@ RR::RR(int timeQuantum){
 
 void RR::setStopTime(const int time){
 	this->stopTime = time + this->timeQuantum;
-}
-
-int RR::checkWatingQueue(const int time, queue<process> &waitingQueue){
-	for(;;){
-		process p = waitingQueue.front();
-		if(p.arrivalTime < time){
-			return -1;
-		}else if(p.arrivalTime == time){
-			this->pushReadyProcess(p);
-			waitingQueue.pop();
-		}else{
-			break;
-		}
-	}
-	return 0;
 }
 
 void RR::pushReadyProcess(process &readyProcess){
@@ -78,12 +63,7 @@ int RR::setExecuteProcess(const int time){
 
 bool RR::isInterrupt(const int time){
 	if(!this->isExecute) return false;
-	this->execute.leftTime--;
-	if(this->execute.leftTime == 0){
-		this->execute.finishTime = time;
-		this->isExecute = false;
-		return true;
-	}else if(this->stopTime == time){
+	if(this->execute.leftTime == 0 || this->stopTime == time){
 		this->isExecute = false;
 		return true;
 	}
@@ -92,6 +72,27 @@ bool RR::isInterrupt(const int time){
 
 process RR::getPauseProcess(){
 	return this->execute;
+}
+
+int RR::through1s(){
+	if(!this->isExecute) return -1;
+	this->execute.leftTime--;
+	return 0;
+}
+
+int checkWatingQueue(const int time, queue<process> &waitingQueue, RR &processSchedule){
+	for(; waitingQueue.size() > 0;){
+		process p = waitingQueue.front();
+		if(p.arrivalTime < time){
+			return -1;
+		}else if(p.arrivalTime == time){
+			processSchedule.pushReadyProcess(p);
+			waitingQueue.pop();
+		}else{
+			break;
+		}
+	}
+	return 0;
 }
 
 void input(queue<process> &waitingQueue){
@@ -121,11 +122,12 @@ void output(vector<process> &p){
 
 void simulate(RR &processSchedule, queue<process> &waitingQueue, vector<process> &finishState){
 	int n = waitingQueue.size();
-	for(int t = 0; finishState.size() < n; t++){
-		processSchedule.checkWatingQueue(t, waitingQueue);
+	for(int t = 0; finishState.size() < n; t++, processSchedule.through1s()){
+		checkWatingQueue(t, waitingQueue, processSchedule);
 		if( processSchedule.isInterrupt(t) ){
 			process pauseProcess = processSchedule.getPauseProcess();
 			if(pauseProcess.leftTime == 0){
+				pauseProcess.finishTime = t;
 				finishState.push_back(pauseProcess);
 			}else{
 				processSchedule.pushReadyProcess(pauseProcess);
